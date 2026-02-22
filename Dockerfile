@@ -21,6 +21,7 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libxml2-dev \
     mysql-client \
+    netcat-openbsd \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache
 
 # Install Composer
@@ -38,19 +39,17 @@ COPY . .
 # Copy compiled frontend assets
 COPY --from=frontend /app/public/build ./public/build
 
+# Create required log directories
+RUN mkdir -p /var/log/supervisor /var/log/nginx /var/run/nginx
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 # Copy nginx + supervisor config
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
-
-# Optimize Laravel
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
 
 EXPOSE 8080
 

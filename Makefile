@@ -70,21 +70,21 @@ railway-setup: ## Einmalig: Railway-Projekt anlegen, MySQL hinzufügen, APP_KEY 
 	@echo "$(BOLD)$(GREEN)✓ Setup abgeschlossen. Jetzt: make railway-deploy$(RESET)"
 
 # ── Railway: Deployment ────────────────────────────────────────────────────
-railway-deploy: ## Build + Deploy auf Railway (+ Migrations)
+railway-deploy: ## Build + Deploy auf Railway (Migrations laufen automatisch via startCommand)
 	@echo "$(BOLD)$(GREEN)→ Deploye auf Railway...$(RESET)"
 	@railway up
-	@$(MAKE) railway-migrate
+	@echo "$(CYAN)→ Migrations werden beim Container-Start ausgeführt (railway.json startCommand)$(RESET)"
 	@echo "$(BOLD)$(GREEN)✓ Deployment abgeschlossen$(RESET)"
 	@railway status
 
-railway-migrate: ## Migrations auf Railway ausführen
-	@echo "$(CYAN)→ Migrations auf Railway...$(RESET)"
-	@railway run php artisan migrate --force
+railway-migrate: ## Migrations manuell via Public-URL ausführen (erfordert MYSQL_PUBLIC_URL)
+	@echo "$(CYAN)→ Migrations via Public-URL...$(RESET)"
+	@railway run --service elma-note php artisan migrate --force
 
 railway-rollback: ## Letzte Migration rückgängig machen
 	@echo "$(BOLD)\033[31m⚠ Migration rollback auf Railway!$(RESET)"
 	@read -p "Fortfahren? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	@railway run php artisan migrate:rollback --force
+	@railway run --service elma-note php artisan migrate:rollback --force
 
 railway-redeploy: ## Letztes Deployment erneut deployen (ohne neu zu bauen)
 	@railway redeploy

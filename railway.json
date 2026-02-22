@@ -1,9 +1,9 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "startCommand": "php artisan migrate --force && php artisan optimize && php artisan storage:link && /usr/bin/supervisord -c /etc/supervisord.conf",
+    "startCommand": "echo '[start] waiting for db'; php /var/www/html/docker/wait-for-db.php; echo '[start] optimize'; php artisan optimize; echo '[start] migrate'; php artisan migrate --force 2>&1 || echo '[start] migrate failed'; echo '[start] storage:link'; php artisan storage:link --force 2>/dev/null; echo '[start] supervisord'; exec /usr/bin/supervisord -c /etc/supervisord.conf",
     "healthcheckPath": "/up",
-    "healthcheckTimeout": 60,
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
