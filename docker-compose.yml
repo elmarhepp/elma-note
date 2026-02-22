@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - .:/var/www/html
-      - /var/www/html/vendor
+      - vendor:/var/www/html/vendor
     ports:
       - "8000:8000"
     environment:
@@ -19,6 +19,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/up"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
     networks:
       - elma-note
 
@@ -54,6 +60,7 @@ services:
 
 volumes:
   mysql_data:
+  vendor:
 
 networks:
   elma-note:
