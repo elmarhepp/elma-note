@@ -7,6 +7,10 @@
                     ← Zurück
                 </Link>
                 <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400 transition-opacity" :class="saveStatus === 'idle' ? 'opacity-0' : 'opacity-100'">
+                        <span v-if="saveStatus === 'saving'" class="text-gray-400">Speichern...</span>
+                        <span v-if="saveStatus === 'saved'" class="text-green-600">Gespeichert ✓</span>
+                    </span>
                     <button @click="toggleFavorite" class="icon-btn" :class="{ 'text-amber-400': form.is_favorite }" title="Favorit">★</button>
                     <button @click="togglePin"      class="icon-btn" :class="{ 'text-indigo-500': form.is_pinned }"  title="Anheften">📌</button>
                     <button @click="saveNote"       class="btn-primary" :disabled="form.processing">Speichern</button>
@@ -42,7 +46,7 @@
                         :class="selectedTagIds.includes(tag.id)
                             ? 'border-transparent text-white'
                             : 'border-gray-200 text-gray-500 hover:border-gray-400'"
-                        :style="selectedTagIds.includes(tag.id) ? { backgroundColor: tag.color } : {}"
+                        :style="selectedTagIds.includes(tag.id) ? { backgroundColor: tag.color || '#6366f1' } : {}"
                     >
                         {{ tag.name }}
                     </span>
@@ -64,7 +68,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Link, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Editor from '@/Components/Editor.vue';
@@ -95,11 +99,52 @@ function toggleTag(id) {
     else form.tags.splice(idx, 1);
 }
 
+// Autosave
+const saveStatus = ref('idle'); // 'idle' | 'saving' | 'saved'
+let autosaveTimer = null;
+
+function scheduleAutosave() {
+    saveStatus.value = 'saving';
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+        form.patch(route('notes.update', props.note.id), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                saveStatus.value = 'saved';
+                setTimeout(() => { saveStatus.value = 'idle'; }, 2000);
+            },
+            onError: () => { saveStatus.value = 'idle'; },
+        });
+    }, 1500);
+}
+
+watch(
+    () => [form.title, form.content, form.notebook_id],
+    () => scheduleAutosave(),
+);
+
+watch(
+    () => form.tags,
+    () => scheduleAutosave(),
+    { deep: true },
+);
+
 function toggleFavorite() { form.is_favorite = !form.is_favorite; saveNote(); }
 function togglePin()      { form.is_pinned   = !form.is_pinned;   saveNote(); }
 
 function saveNote() {
-    form.patch(route('notes.update', props.note.id));
+    clearTimeout(autosaveTimer);
+    saveStatus.value = 'saving';
+    form.patch(route('notes.update', props.note.id), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            saveStatus.value = 'saved';
+            setTimeout(() => { saveStatus.value = 'idle'; }, 2000);
+        },
+        onError: () => { saveStatus.value = 'idle'; },
+    });
 }
 
 function deleteNote() {

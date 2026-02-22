@@ -34,7 +34,7 @@ class NoteController extends Controller
 
         return Inertia::render('Notes/Index', [
             'notes'     => $notes,
-            'notebooks' => Auth::user()->notebooks()->orderBy('name')->get(),
+            'notebooks' => Auth::user()->notebooks()->withCount('notes')->orderBy('name')->get(),
             'tags'      => Auth::user()->tags()->withCount('notes')->orderBy('name')->get(),
             'filters'   => $request->only(['search', 'notebook', 'tag', 'favorites']),
         ]);
@@ -43,8 +43,8 @@ class NoteController extends Controller
     public function create(): Response
     {
         return Inertia::render('Notes/Create', [
-            'notebooks' => Auth::user()->notebooks()->orderBy('name')->get(),
-            'tags'      => Auth::user()->tags()->orderBy('name')->get(),
+            'notebooks' => Auth::user()->notebooks()->withCount('notes')->orderBy('name')->get(),
+            'tags'      => Auth::user()->tags()->withCount('notes')->orderBy('name')->get(),
         ]);
     }
 
@@ -78,8 +78,8 @@ class NoteController extends Controller
 
         return Inertia::render('Notes/Show', [
             'note'      => $note,
-            'notebooks' => Auth::user()->notebooks()->orderBy('name')->get(),
-            'tags'      => Auth::user()->tags()->orderBy('name')->get(),
+            'notebooks' => Auth::user()->notebooks()->withCount('notes')->orderBy('name')->get(),
+            'tags'      => Auth::user()->tags()->withCount('notes')->orderBy('name')->get(),
         ]);
     }
 
